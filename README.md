@@ -3,10 +3,10 @@
 ## Init
 
 ```bash
-mkdir <PROJECT NAME>
-cd <PROJECT NAME>
+mkdir project-nrf-leak-detector
+cd project-nrf-leak-detector
 docker run --rm -it -u $(id -u):$(id -g) -v $(pwd):/workdir/project nordicplayground/nrfconnect-sdk:v2.1-branch bash
-west init -m https://github.com/fgervais/<PROJECT NAME>.git .
+west init -m https://github.com/fgervais/project-nrf-leak-detector.git .
 west update
 ```
 
@@ -31,6 +31,13 @@ cd application
 rm -rf build/
 ```
 
+## Update
+
+```bash
+cd application
+docker-compose run nrf west update
+```
+
 ## Flash
 
 ### nrfjprog
@@ -48,4 +55,4 @@ pyocd flash -e sector -t nrf52840 -f 4000000 build/zephyr/zephyr.hex
 
 # Hardware
 
-https://github.com/fgervais/<PROJECT NAME>_hardware
+https://github.com/fgervais/project-nrf-leak-detector_hardware
