@@ -1,4 +1,5 @@
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 
@@ -16,7 +17,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define LED0_NODE DT_ALIAS(myled0alias)
 
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
-
+static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer, pwm));
 
 void main(void)
 {
@@ -34,10 +35,17 @@ void main(void)
 		return;
 	}
 
+	if (!device_is_ready(buzzer.dev)) {
+		printk("%s: device not ready.\n", buzzer.dev->name);
+		return;
+	}
+
 	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
 		return;
 	}
+
+	pwm_set_dt(&buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
 
 	LOG_INF("****************************************");
 	LOG_INF("MAIN DONE");
