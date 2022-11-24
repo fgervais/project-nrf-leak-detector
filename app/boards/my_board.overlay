@@ -142,6 +142,10 @@
 &adc {
 	status = "disabled";
 };
+&comp {
+	compatible = "nordic,nrf-lpcomp";
+	status = "okay";
+};
 &uart1 {
 	status = "disabled";
 };
