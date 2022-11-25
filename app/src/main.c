@@ -36,7 +36,14 @@ void main(void)
 	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	nrfx_err_t err;
-	nrfx_lpcomp_config_t lpcomp_config = NRFX_LPCOMP_DEFAULT_CONFIG(NRF_LPCOMP_INPUT_2);
+	// nrfx_lpcomp_config_t lpcomp_config = NRFX_LPCOMP_DEFAULT_CONFIG(NRF_LPCOMP_INPUT_2);
+	nrfx_lpcomp_config_t lpcomp_config = {
+	    .hal    = {  NRF_LPCOMP_REF_SUPPLY_5_16,
+	                 NRF_LPCOMP_DETECT_DOWN,
+	                 NRF_LPCOMP_HYST_NOHYST },
+	    .input  = (nrf_lpcomp_input_t)NRF_LPCOMP_INPUT_2,
+	    .interrupt_priority = NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY
+	};
 
 
 	if (app_event_manager_init()) {
@@ -66,7 +73,7 @@ void main(void)
 	}
 
 	IRQ_CONNECT(COMP_LPCOMP_IRQn,
-		    7-1,
+		    NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY-1,
 		    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
 
 	nrfx_lpcomp_enable();
