@@ -3,6 +3,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 
+#include <hal/nrf_power.h>
 #include <nrfx_lpcomp.h>
 
 #include <app_event_manager.h>
@@ -28,11 +29,39 @@ static void comparator_handler(nrf_lpcomp_event_t event)
 	LOG_INF("COMP event");
 }
 
-// NRF_POWER_RESETREAS_LPCOMP_MASK
+
+static void print_power_resetreas(uint32_t resetreas) {
+	if (resetreas & NRF_POWER_RESETREAS_RESETPIN_MASK) {
+		LOG_INF("Reset Reason: Pin Reset");
+	} else if (resetreas & NRF_POWER_RESETREAS_DOG_MASK) {
+		LOG_INF("Reset Reason: Watchdog");
+	} else if (resetreas & NRF_POWER_RESETREAS_SREQ_MASK) {
+		LOG_INF("Reset Reason: Software");
+	} else if (resetreas & NRF_POWER_RESETREAS_LOCKUP_MASK) {
+		LOG_INF("Reset Reason: Lockup");
+#if defined (POWER_RESETREAS_LPCOMP_Msk)
+	} else if (resetreas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
+		LOG_INF("Reset Reason: LPCOMP Wakeup");
+#endif
+	} else if (resetreas & NRF_POWER_RESETREAS_DIF_MASK) {
+		LOG_INF("Reset Reason: Debug Interface Wakeup");
+#if defined (NRF_POWER_RESETREAS_VBUS_MASK)
+	} else if (resetreas & NRF_POWER_RESETREAS_VBUS_MASK) {
+		LOG_INF("Reset Reason: VBUS Wakeup");
+#endif
+	} else if (resetreas == 0) {
+		// absence of a value, means a power on reset took place
+		LOG_INF("Reset Reason: Power on Reset");
+	} else {
+		LOG_INF("Reset Reason: Unknown");
+	}
+}
+
 
 void main(void)
 {
 	int ret;
+	uint32_t reas;
 	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	nrfx_err_t err;
@@ -44,6 +73,11 @@ void main(void)
 	    .input  = (nrf_lpcomp_input_t)NRF_LPCOMP_INPUT_2,
 	    .interrupt_priority = NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY
 	};
+
+
+	reas = nrf_power_resetreas_get(NRF_POWER);
+	nrf_power_resetreas_clear(NRF_POWER, reas);
+	print_power_resetreas(reas);
 
 
 	if (app_event_manager_init()) {
