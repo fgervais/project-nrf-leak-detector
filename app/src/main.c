@@ -6,21 +6,10 @@
 #include <hal/nrf_power.h>
 #include <nrfx_lpcomp.h>
 
-#include <app_event_manager.h>
-
-#define MODULE main
-#include <caf/events/module_state_event.h>
-#include <caf/events/button_event.h>
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 
-#define SLEEP_TIME_MS   10
-#define LED0_NODE DT_ALIAS(myled0alias)
-
-
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer, pwm));
 
 
@@ -79,24 +68,8 @@ void main(void)
 	nrf_power_resetreas_clear(NRF_POWER, reas);
 	print_power_resetreas(reas);
 
-
-	if (app_event_manager_init()) {
-		LOG_ERR("Event manager not initialized");
-	} else {
-		module_set_state(MODULE_STATE_READY);
-	}
-
-	if (!device_is_ready(led.port)) {
-		return;
-	}
-
 	if (!device_is_ready(buzzer.dev)) {
 		printk("%s: device not ready.\n", buzzer.dev->name);
-		return;
-	}
-
-	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
 		return;
 	}
 
@@ -125,23 +98,3 @@ void main(void)
 
 	LOG_INF("PM_DEVICE_ACTION_SUSPEND");
 }
-
-static bool event_handler(const struct app_event_header *eh)
-{
-	int ret;
-	const struct button_event *evt;
-
-	if (is_button_event(eh)) {
-		evt = cast_button_event(eh);
-
-		if (evt->pressed) {
-			LOG_INF("Pin Toggle");
-			ret = gpio_pin_toggle_dt(&led);
-		}
-	}
-
-	return true;
-}
-
-APP_EVENT_LISTENER(MODULE, event_handler);
-APP_EVENT_SUBSCRIBE(MODULE, button_event);
