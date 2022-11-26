@@ -54,7 +54,6 @@ void main(void)
 	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	nrfx_err_t err;
-	// nrfx_lpcomp_config_t lpcomp_config = NRFX_LPCOMP_DEFAULT_CONFIG(NRF_LPCOMP_INPUT_2);
 	nrfx_lpcomp_config_t lpcomp_config = {
 	    .hal    = {  NRF_LPCOMP_REF_SUPPLY_5_16,
 	                 NRF_LPCOMP_DETECT_DOWN,
