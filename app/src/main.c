@@ -19,7 +19,8 @@ static void comparator_handler(nrf_lpcomp_event_t event)
 }
 
 
-static void print_power_resetreas(uint32_t resetreas) {
+static void print_power_resetreas(uint32_t resetreas)
+{
 	if (resetreas & NRF_POWER_RESETREAS_RESETPIN_MASK) {
 		LOG_INF("Reset Reason: Pin Reset");
 	} else if (resetreas & NRF_POWER_RESETREAS_DOG_MASK) {
@@ -43,6 +44,26 @@ static void print_power_resetreas(uint32_t resetreas) {
 		LOG_INF("Reset Reason: Power on Reset");
 	} else {
 		LOG_INF("Reset Reason: Unknown");
+	}
+}
+
+
+void beep(void)
+{
+	pwm_set_dt(&buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
+	k_sleep(K_MSEC(50));
+	pwm_set_dt(&buzzer, PWM_USEC(250U), 0);
+	k_sleep(K_MSEC(50));
+}
+
+
+void alarm(int seconds)
+{
+	for (int i = 0; i < (seconds * 2); i++) {
+		pwm_set_dt(&buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
+		k_sleep(K_MSEC(250));
+		pwm_set_dt(&buzzer, PWM_USEC(250U), 0);
+		k_sleep(K_MSEC(250));
 	}
 }
 
@@ -85,8 +106,14 @@ void main(void)
 	nrfx_lpcomp_enable();
 
 
-
-	pwm_set_dt(&buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
+	if (reas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
+		alarm(60);
+		return;
+	}
+	else {
+		beep();
+		beep();
+	}
 
 	LOG_INF("****************************************");
 	LOG_INF("MAIN DONE");
