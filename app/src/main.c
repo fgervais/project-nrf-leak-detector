@@ -76,7 +76,7 @@ void main(void)
 
 	nrfx_err_t err;
 	nrfx_lpcomp_config_t lpcomp_config = {
-	    .hal    = {  NRF_LPCOMP_REF_SUPPLY_5_16,
+	    .hal    = {  NRF_LPCOMP_REF_SUPPLY_6_8,
 	                 NRF_LPCOMP_DETECT_DOWN,
 	                 NRF_LPCOMP_HYST_NOHYST },
 	    .input  = (nrf_lpcomp_input_t)NRF_LPCOMP_INPUT_2,
