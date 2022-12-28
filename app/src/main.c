@@ -93,6 +93,15 @@ void main(void)
 		return;
 	}
 
+	if (reas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
+		alarm(60);
+		return;
+	}
+	else {
+		beep();
+		beep();
+	}
+
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_comp_init error: %08x", err);
@@ -104,16 +113,6 @@ void main(void)
 		    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
 
 	nrfx_lpcomp_enable();
-
-
-	if (reas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
-		alarm(60);
-		return;
-	}
-	else {
-		beep();
-		beep();
-	}
 
 	LOG_INF("****************************************");
 	LOG_INF("MAIN DONE");
