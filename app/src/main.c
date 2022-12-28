@@ -121,5 +121,5 @@ void main(void)
 
 	// pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 
-	LOG_INF("PM_DEVICE_ACTION_SUSPEND");
+	LOG_INF("!PM_DEVICE_ACTION_SUSPEND");
 }
