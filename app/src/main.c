@@ -70,7 +70,6 @@ void alarm(int seconds)
 
 void main(void)
 {
-	int ret;
 	uint32_t reas;
 	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
