@@ -9,6 +9,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
+#include "music_notes.h"
+
 
 static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer, pwm));
 
@@ -56,6 +58,34 @@ void beep(void)
 	k_sleep(K_MSEC(50));
 }
 
+void play_tone(const struct pwm_dt_spec *spec, int frequency_hz, int duration_ms)
+{
+	pwm_set_dt(spec, PWM_HZ(frequency_hz), PWM_HZ(frequency_hz) * 0.53);
+	k_sleep(K_MSEC(duration_ms));
+}
+
+void no_tone(const struct pwm_dt_spec *spec)
+{
+	pwm_set_dt(spec, 0, 0);
+}
+
+void sound_coin(void)
+{
+	play_tone(&buzzer, NOTE_B5, 100);
+	play_tone(&buzzer, NOTE_E6, 350);
+	no_tone(&buzzer);
+}
+
+void sound_1up(void)
+{
+	play_tone(&buzzer, NOTE_E6, 125);
+	play_tone(&buzzer, NOTE_G6, 125);
+	play_tone(&buzzer, NOTE_E7, 125);
+	play_tone(&buzzer, NOTE_C7, 125);
+	play_tone(&buzzer, NOTE_D7, 125);
+	play_tone(&buzzer, NOTE_G7, 125);
+	no_tone(&buzzer);
+}
 
 void alarm(int seconds)
 {
@@ -97,8 +127,7 @@ void main(void)
 		return;
 	}
 	else {
-		beep();
-		beep();
+		sound_1up();
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
