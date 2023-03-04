@@ -14,14 +14,14 @@ west update
 
 ```bash
 cd application
-docker-compose run --rm nrf west build -b my_board -s app
+docker compose run --rm nrf west build -b my_board -s app
 ```
 
 ## menuconfig
 
 ```bash
 cd application
-docker-compose run --rm nrf west build -b my_board -s app -t menuconfig
+docker compose run --rm nrf west build -b my_board -s app -t menuconfig
 ```
 
 ## Clean
@@ -35,7 +35,7 @@ rm -rf build/
 
 ```bash
 cd application
-docker-compose run --rm nrf west update
+docker compose run --rm nrf west update
 ```
 
 ## Flash
@@ -43,7 +43,7 @@ docker-compose run --rm nrf west update
 ### nrfjprog
 ```bash
 cd application
-docker-compose -f docker-compose.yml -f docker-compose.device.yml \
+docker compose -f docker-compose.yml -f docker-compose.device.yml \
         run --rm nrf west flash
 ```
 
