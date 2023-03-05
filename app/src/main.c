@@ -2,6 +2,8 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 
 #include <hal/nrf_power.h>
 #include <nrfx_lpcomp.h>
@@ -100,11 +102,39 @@ void alarm(int seconds)
 	}
 }
 
+static void system_off()
+{
+	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+
+	LOG_INF("Entering system off");
+
+	pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
+	LOG_ERR("Console did not suspend");
+
+	k_sleep(K_SECONDS(1));
+
+	/* Before we disabled entry to deep sleep. Here we need to override
+	 * that, then force a sleep so that the deep sleep takes effect.
+	 */
+	const struct pm_state_info si = {PM_STATE_SOFT_OFF, 0, 0};
+
+	pm_state_force(0, &si);
+
+	/* Going into sleep will actually go to system off mode, because we
+	 * forced it above.
+	 */
+	k_sleep(K_MSEC(1));
+
+	/* k_sleep will never exit, so below two lines will never be executed
+	 * if system off was correct. On the other hand if someting gone wrong
+	 * we will see it on terminal.
+	 */
+	// LOG_ERR("System off failed");
+}
 
 void main(void)
 {
 	uint32_t reas;
-	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	nrfx_err_t err;
 	nrfx_lpcomp_config_t lpcomp_config = {
@@ -150,7 +180,5 @@ shutdown:
 	LOG_INF("MAIN DONE");
 	LOG_INF("****************************************");
 
-	// pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
-
-	LOG_INF("!PM_DEVICE_ACTION_SUSPEND");
+	system_off();
 }
