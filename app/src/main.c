@@ -12,6 +12,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #include "music_notes.h"
 
 
+#define ALARM_TIME_SEC	60
+
+
 static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer, pwm));
 
 
@@ -123,8 +126,8 @@ void main(void)
 	}
 
 	if (reas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
-		alarm(60);
-		return;
+		alarm(ALARM_TIME_SEC);
+		goto shutdown;
 	}
 	else {
 		sound_1up();
@@ -142,6 +145,7 @@ void main(void)
 
 	nrfx_lpcomp_enable();
 
+shutdown:
 	LOG_INF("****************************************");
 	LOG_INF("MAIN DONE");
 	LOG_INF("****************************************");
