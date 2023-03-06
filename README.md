@@ -56,3 +56,15 @@ pyocd flash -e sector -t nrf52840 -f 4000000 build/zephyr/zephyr.hex
 # Hardware
 
 https://github.com/fgervais/project-nrf-leak-detector_hardware
+
+## Power Consumption
+
+Based on revision [`ff65151e477efaec1259688cf5fb03853c3a1412`](https://github.com/fgervais/project-nrf-leak-detector/tree/ff65151e477efaec1259688cf5fb03853c3a1412/app/src).
+
+### Idle
+
+![Idle](assets/img/power_idle.png)
+
+### Alarm
+
+![Alarm](assets/img/power_alarm.png)
