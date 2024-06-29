@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define ALARM_TIME_SEC	60
 
 
-// static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer, pwm));
 static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer));
 
 
