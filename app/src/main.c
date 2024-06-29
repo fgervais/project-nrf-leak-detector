@@ -14,65 +14,15 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #include <app_version.h>
 #include <reset.h>
 
-#include "music_notes.h"
+#include "buzzer.h"
 
 
 #define ALARM_TIME_SEC	60
 
 
-static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer));
-
-
 static void comparator_handler(nrf_lpcomp_event_t event)
 {
 	LOG_INF("COMP event");
-}
-
-void beep(void)
-{
-	pwm_set_dt(&buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
-	k_sleep(K_MSEC(50));
-	pwm_set_dt(&buzzer, PWM_USEC(250U), 0);
-	k_sleep(K_MSEC(50));
-}
-
-void play_tone(const struct pwm_dt_spec *spec, int frequency_hz, int duration_ms)
-{
-	pwm_set_dt(spec, PWM_HZ(frequency_hz), PWM_HZ(frequency_hz) * 0.53);
-	k_sleep(K_MSEC(duration_ms));
-}
-
-void no_tone(const struct pwm_dt_spec *spec)
-{
-	pwm_set_dt(spec, 0, 0);
-}
-
-void sound_coin(void)
-{
-	play_tone(&buzzer, NOTE_B5, 100);
-	play_tone(&buzzer, NOTE_E6, 350);
-	no_tone(&buzzer);
-}
-
-void sound_1up(void)
-{
-	play_tone(&buzzer, NOTE_E6, 125);
-	play_tone(&buzzer, NOTE_G6, 125);
-	play_tone(&buzzer, NOTE_E7, 125);
-	play_tone(&buzzer, NOTE_C7, 125);
-	play_tone(&buzzer, NOTE_D7, 125);
-	play_tone(&buzzer, NOTE_G7, 125);
-	no_tone(&buzzer);
-}
-
-void alarm(int seconds)
-{
-	for (int i = 0; i < (seconds * 2); i++) {
-		pwm_set_dt(&buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
-		k_sleep(K_MSEC(250));
-		pwm_set_dt(&buzzer, PWM_USEC(250U), 0);
-		k_sleep(K_MSEC(250));
-	}
 }
 
 static int system_off(void)
@@ -105,6 +55,8 @@ int main(void)
 	    .input  = (nrf_lpcomp_input_t)NRF_LPCOMP_INPUT_2,
 	    .interrupt_priority = NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY
 	};
+	static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer));
+
 
 	LOG_INF("\n\n🚀 MAIN START (%s) 🚀\n", APP_VERSION_FULL);
 
@@ -116,11 +68,11 @@ int main(void)
 	}
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
-		alarm(ALARM_TIME_SEC);
+		alarm(&buzzer, ALARM_TIME_SEC);
 		goto shutdown;
 	}
 	else {
-		sound_1up();
+		sound_1up(&buzzer);
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);

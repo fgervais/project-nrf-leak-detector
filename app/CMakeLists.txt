@@ -22,4 +22,5 @@ zephyr_include_directories(
 target_include_directories(app PRIVATE ${CMAKE_BINARY_DIR}/app/include src)
 
 target_sources(app PRIVATE
+        src/buzzer.c
         src/main.c)
