@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2018, Cue Health Inc
- *
- * SPDX-License-Identifier: Apache-2.0
- */
 #include <nrfx_pwm.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/pm/device.h>
@@ -363,11 +358,11 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 		.initial_config = {					      \
 			.skip_gpio_cfg = true,				      \
 			.skip_psel_cfg = true,				      \
-			.base_clock = NRF_PWM_CLK_1MHz,			      \
+			.base_clock = NRF_PWM_CLK_16MHz,			      \
 			.count_mode = (PWM_PROP(idx, center_aligned)	      \
 				       ? NRF_PWM_MODE_UP_AND_DOWN	      \
 				       : NRF_PWM_MODE_UP),		      \
-			.top_value = 1000,				      \
+			.top_value = 4000,				      \
 			.load_mode = NRF_PWM_LOAD_INDIVIDUAL,		      \
 			.step_mode = NRF_PWM_STEP_TRIGGERED,		      \
 		},							      \
