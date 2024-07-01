@@ -11,6 +11,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
+#include <app_version.h>
+#include <reset.h>
+
 #include "music_notes.h"
 
 
@@ -25,36 +28,6 @@ static void comparator_handler(nrf_lpcomp_event_t event)
 {
 	LOG_INF("COMP event");
 }
-
-
-static void print_power_resetreas(uint32_t resetreas)
-{
-	if (resetreas & NRF_POWER_RESETREAS_RESETPIN_MASK) {
-		LOG_INF("Reset Reason: Pin Reset");
-	} else if (resetreas & NRF_POWER_RESETREAS_DOG_MASK) {
-		LOG_INF("Reset Reason: Watchdog");
-	} else if (resetreas & NRF_POWER_RESETREAS_SREQ_MASK) {
-		LOG_INF("Reset Reason: Software");
-	} else if (resetreas & NRF_POWER_RESETREAS_LOCKUP_MASK) {
-		LOG_INF("Reset Reason: Lockup");
-#if defined (POWER_RESETREAS_LPCOMP_Msk)
-	} else if (resetreas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
-		LOG_INF("Reset Reason: LPCOMP Wakeup");
-#endif
-	} else if (resetreas & NRF_POWER_RESETREAS_DIF_MASK) {
-		LOG_INF("Reset Reason: Debug Interface Wakeup");
-#if defined (NRF_POWER_RESETREAS_VBUS_MASK)
-	} else if (resetreas & NRF_POWER_RESETREAS_VBUS_MASK) {
-		LOG_INF("Reset Reason: VBUS Wakeup");
-#endif
-	} else if (resetreas == 0) {
-		// absence of a value, means a power on reset took place
-		LOG_INF("Reset Reason: Power on Reset");
-	} else {
-		LOG_INF("Reset Reason: Unknown");
-	}
-}
-
 
 void beep(void)
 {
@@ -123,7 +96,7 @@ static int system_off(void)
 
 int main(void)
 {
-	uint32_t reas;
+	uint32_t reset_cause;
 
 	nrfx_err_t err;
 	nrfx_lpcomp_config_t lpcomp_config = {
@@ -134,17 +107,16 @@ int main(void)
 	    .interrupt_priority = NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY
 	};
 
+	LOG_INF("\n\n🚀 MAIN START (%s) 🚀\n", APP_VERSION_FULL);
 
-	reas = nrf_power_resetreas_get(NRF_POWER);
-	nrf_power_resetreas_clear(NRF_POWER, reas);
-	print_power_resetreas(reas);
+	reset_cause = show_and_clear_reset_cause();
 
 	if (!device_is_ready(buzzer.dev)) {
 		printk("%s: device not ready.\n", buzzer.dev->name);
 		return 1;
 	}
 
-	if (reas & NRF_POWER_RESETREAS_LPCOMP_MASK) {
+	if (is_reset_cause_lpcomp(reset_cause)) {
 		alarm(ALARM_TIME_SEC);
 		goto shutdown;
 	}
