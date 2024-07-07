@@ -68,11 +68,11 @@ int main(void)
 	}
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
-		alarm(&buzzer, ALARM_TIME_SEC);
+		// alarm(&buzzer, ALARM_TIME_SEC);
 		goto shutdown;
 	}
 	else {
-		sound_1up(&buzzer);
+		// sound_1up(&buzzer);
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
