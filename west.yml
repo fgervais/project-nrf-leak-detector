@@ -16,5 +16,9 @@ manifest:
       url: https://github.com/fgervais/zephyr-mymodule-base.git
       revision: 166e219fb65cebb551f42cab5d76042e07b31a3c
       path: mymodules/base
+    - name: zephyr-driver-nrf-pwm-sequence-playback
+      path: driver/nrf_pwm_seq
+      revision: 1c5c4c2528c2b1532bed6e31b349c14d1312fc24
+      url: https://github.com/fgervais/zephyr-driver-nrf-pwm-sequence-playback.git
   self:
     path: application
