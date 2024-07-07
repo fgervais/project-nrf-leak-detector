@@ -55,7 +55,7 @@ int main(void)
 	    .input  = (nrf_lpcomp_input_t)NRF_LPCOMP_INPUT_2,
 	    .interrupt_priority = NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY
 	};
-	static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer));
+	const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer));
 
 
 	LOG_INF("\n\n🚀 MAIN START (%s) 🚀\n", APP_VERSION_FULL);
