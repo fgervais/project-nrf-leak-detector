@@ -12,6 +12,7 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include <app_version.h>
+#include <nrfx_pwm.h>
 #include <reset.h>
 
 #include "buzzer.h"
@@ -43,6 +44,44 @@ static int system_off(void)
 	return 0;
 }
 
+#define PWM_PRESCALER		1
+#define PWM_CLOCK_HZ		(16000000.0f / PWM_PRESCALER)
+
+#define DESIRED_FREQ_HZ		4000.0f
+#define TOP_VALUE		((1.0f/DESIRED_FREQ_HZ) / (1.0f/PWM_CLOCK_HZ))
+
+#define BUZZER_PERIOD_SEC 	0.250f
+#define VALUE_REPEAT		(BUZZER_PERIOD_SEC / (1.0f/DESIRED_FREQ_HZ))
+
+#define PLAYBACK_COUNT		(ALARM_TIME_SEC / (BUZZER_PERIOD_SEC * 2))
+
+#define TO_NRF_PWM_CLK_T(x)	(LOG2(x) / LOG2(2))
+
+// nrf_pwm_values_t 	values
+//  	Pointer to an array with duty cycle values. This array must be in Data RAM. More...
+ 
+// uint16_t 	length
+//  	Number of 16-bit values in the array pointed by values.
+ 
+// uint32_t 	repeats
+//  	Number of times that each duty cycle should be repeated (after being played once). Ignored in NRF_PWM_STEP_TRIGGERED mode.
+ 
+// uint32_t 	end_delay
+//  	Additional time (in PWM periods) that the last duty cycle is to be kept after the sequence is played. Ignored in NRF_PWM_STEP_TRIGGERED mode.
+
+uint16_t seq_values[] = {
+	TOP_VALUE / 2,	// 50% PWM
+	TOP_VALUE,	// 0%
+};
+
+static nrf_pwm_sequence_t seq = {
+	.values.p_raw = seq_values,
+	.length = ARRAY_SIZE(seq_values),
+	.repeats = VALUE_REPEAT,
+};
+
+		
+
 int main(void)
 {
 	uint32_t reset_cause;
@@ -66,6 +105,26 @@ int main(void)
 		printk("%s: device not ready.\n", buzzer.dev->name);
 		return 1;
 	}
+
+
+	// const struct pwm_nrfx_config *buzzer_config = buzzer.dev->config;
+
+	// It's the fist member of the struct
+	const nrfx_pwm_t *pwm = buzzer.dev->config;
+
+	nrf_pwm_configure(pwm->p_reg,
+			  TO_NRF_PWM_CLK_T(PWM_PRESCALER),
+			  NRF_PWM_MODE_UP,
+			  TOP_VALUE);
+
+	nrfx_pwm_simple_playback(pwm,
+				 &seq,
+				 PLAYBACK_COUNT,
+				 NRFX_PWM_FLAG_STOP);
+
+	return 0;
+
+
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
 		// alarm(&buzzer, ALARM_TIME_SEC);
