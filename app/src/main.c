@@ -44,7 +44,7 @@ static int system_off(void)
 	return 0;
 }
 
-#define PWM_PRESCALER		1
+#define PWM_PRESCALER		1.0f
 #define PWM_CLOCK_HZ		(16000000.0f / PWM_PRESCALER)
 
 #define DESIRED_FREQ_HZ		4000.0f
@@ -80,6 +80,27 @@ static nrf_pwm_sequence_t seq = {
 	.repeats = VALUE_REPEAT,
 };
 
+// static uint16_t seq_values[] = {
+// 	2000,	// 50% PWM
+// 	4000,	// 0%
+// };
+
+// static nrf_pwm_sequence_t seq = {
+// 	.values.p_raw = seq_values,
+// 	.length = ARRAY_SIZE(seq_values),
+// 	.repeats = 1000,
+// };
+
+
+static nrfx_pwm_config_t pwm_initial_config = {					      \
+	.skip_gpio_cfg = true,
+	.skip_psel_cfg = true,
+	.base_clock = NRF_PWM_CLK_16MHz,
+	.count_mode = NRF_PWM_MODE_UP,
+	.top_value = TOP_VALUE,
+	.load_mode = NRF_PWM_LOAD_COMMON,
+	.step_mode = NRF_PWM_STEP_AUTO,
+};
 		
 
 int main(void)
@@ -106,21 +127,41 @@ int main(void)
 		return 1;
 	}
 
+	// alarm(&buzzer, 1);
+	// return 1;
+
 
 	// const struct pwm_nrfx_config *buzzer_config = buzzer.dev->config;
 
 	// It's the fist member of the struct
 	const nrfx_pwm_t *pwm = buzzer.dev->config;
+	// nrfx_pwm_t pwm = NRFX_PWM_INSTANCE(0);
 
-	nrf_pwm_configure(pwm->p_reg,
-			  TO_NRF_PWM_CLK_T(PWM_PRESCALER),
-			  NRF_PWM_MODE_UP,
-			  TOP_VALUE);
+
+	nrfx_pwm_reconfigure(pwm,
+		      &pwm_initial_config);
+
+	// LOG_INF("TOP_VALUE: %d", (uint16_t)TOP_VALUE);
+	// LOG_INF("base_clock: %d", TO_NRF_PWM_CLK_T(PWM_PRESCALER));
+	// nrf_pwm_configure(pwm.p_reg,
+	// 		  TO_NRF_PWM_CLK_T(PWM_PRESCALER),
+	// 		  NRF_PWM_MODE_UP,
+	// 		  TOP_VALUE);
+
+	// nrfx_pwm_simple_playback(&pwm,
+	// 			 &seq,
+	// 			 PLAYBACK_COUNT,
+	// 			 NRFX_PWM_FLAG_STOP);
+
+	// nrf_pwm_configure(pwm.p_reg,
+	// 		  0,
+	// 		  NRF_PWM_MODE_UP,
+	// 		  4000);
 
 	nrfx_pwm_simple_playback(pwm,
 				 &seq,
 				 PLAYBACK_COUNT,
-				 NRFX_PWM_FLAG_STOP);
+				 0);
 
 	return 0;
 
