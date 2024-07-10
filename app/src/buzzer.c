@@ -76,7 +76,7 @@ int buzzer_alarm(const struct pwm_dt_spec *buzzer, int seconds)
 	nrfx_pwm_simple_playback(pwm_instance,
 				 &alarm_sequence,
 				 seconds / (BUZZER_PERIOD_SEC * 2),
-				 0);
+				 NRFX_PWM_FLAG_STOP);
 
 	// for (int i = 0; i < (seconds * 2); i++) {
 	// 	pwm_set_dt(buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);

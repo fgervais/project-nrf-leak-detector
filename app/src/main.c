@@ -103,7 +103,7 @@ int main(void)
 		return 1;
 	}
 
-	// alarm(&buzzer, 1);
+	buzzer_alarm(&buzzer_dt_spec, 1);
 	// return 1;
 
 
@@ -166,6 +166,7 @@ int main(void)
 
 shutdown:
 	while (buzzer_is_running(&buzzer_dt_spec)) {
+		LOG_INF("Waiting for buzzer to finish");
 		k_sleep(K_SECONDS(1));
 	}
 
