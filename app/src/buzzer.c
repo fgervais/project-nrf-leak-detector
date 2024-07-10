@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
 #define BUZZER_PERIOD_SEC 	0.250f
 #define VALUE_REPEAT		(BUZZER_PERIOD_SEC / (1.0f/DESIRED_FREQ_HZ))
 
-// #define PLAYBACK_COUNT		(ALARM_TIME_SEC / (BUZZER_PERIOD_SEC * 2))
-
 
 void beep(const struct pwm_dt_spec *buzzer)
 {
@@ -77,13 +75,6 @@ int buzzer_alarm(const struct pwm_dt_spec *buzzer, int seconds)
 				 &alarm_sequence,
 				 seconds / (BUZZER_PERIOD_SEC * 2),
 				 NRFX_PWM_FLAG_STOP);
-
-	// for (int i = 0; i < (seconds * 2); i++) {
-	// 	pwm_set_dt(buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
-	// 	k_sleep(K_MSEC(250));
-	// 	pwm_set_dt(buzzer, PWM_USEC(250U), 0);
-	// 	k_sleep(K_MSEC(250));
-	// }
 
 	return 0;
 }
