@@ -3,7 +3,9 @@
 
 struct pwm_dt_spec;
 
-void alarm(const struct pwm_dt_spec *buzzer, int seconds);
 void sound_1up(const struct pwm_dt_spec *buzzer);
+int buzzer_alarm(const struct pwm_dt_spec *buzzer, int seconds);
+bool buzzer_is_running(const struct pwm_dt_spec *buzzer);
+int buzzer_init(const struct pwm_dt_spec *buzzer);
 
 #endif /* BUZZER_H_ */
