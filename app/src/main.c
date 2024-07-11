@@ -74,15 +74,18 @@ int main(void)
 		return 1;
 	}
 
-	buzzer_alarm(&buzzer_dt_spec, 1);
-
+	// buzzer_alarm(&buzzer_dt_spec, 1);
+	// return 0;
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
 		buzzer_alarm(&buzzer_dt_spec, ALARM_TIME_SEC);
 		goto shutdown;
 	}
 	else {
-		// sound_1up(&buzzer_dt_spec);
+		LOG_INF("Playing 1up");
+		sound_1up(&buzzer_dt_spec);
+		k_sleep(K_SECONDS(2));
+		return 0;
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
