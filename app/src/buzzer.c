@@ -16,8 +16,14 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
 #define TOP_VALUE		((1.0f/DESIRED_FREQ_HZ) / (1.0f/PWM_CLOCK_HZ))
 
 #define BUZZER_PERIOD_SEC 	0.250f
-#define VALUE_REPEAT		(BUZZER_PERIOD_SEC / (1.0f/DESIRED_FREQ_HZ))
+// #define VALUE_REPEAT		(BUZZER_PERIOD_SEC / (1.0f/DESIRED_FREQ_HZ))
+#define VALUE_REPEAT		1
 
+
+static void pwm_handler(nrfx_pwm_evt_type_t event_type, void *p_context)
+{
+	LOG_INF("pwm_handler (%d)", event_type);
+}
 
 void beep(const struct pwm_dt_spec *buzzer)
 {
@@ -104,15 +110,40 @@ int buzzer_init(const struct pwm_dt_spec *buzzer)
 	// is the first member of the struct.
 	const nrfx_pwm_t *pwm_instance = buzzer->dev->config;
 
-	ret = nrfx_pwm_reconfigure(pwm_instance, &pwm_initial_config);
-	if (ret == NRFX_ERROR_INVALID_STATE) {
-		LOG_ERR("Cannot reconfigure, pwm was not initialized");
-		return -EINVAL;
+	nrfx_pwm_uninit(pwm_instance);
+
+	ret = nrfx_pwm_init(pwm_instance, &pwm_initial_config,
+                        	 pwm_handler, NULL);
+	if (ret != NRFX_SUCCESS) {
+		LOG_ERR("Cannot initialize pwm");
+		return -EIO;
 	}
-	if (ret == NRFX_ERROR_BUSY) {
-		LOG_ERR("Cannot reconfigure, pwm is running");
-		return -EBUSY;
-	}
+
+	// IRQ_CONNECT(PWM0_IRQn,
+	// 	    NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY-1,
+	// 	    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
+
+	IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_PWM_INST_GET(0)), IRQ_PRIO_LOWEST,
+		NRFX_PWM_INST_HANDLER_GET(0), 0, 0);
+
+	// IRQ_CONNECT(
+	// 	NRFX_IRQ_NUMBER_GET(NRF_PWM_INST_GET(pwm_instance->drv_inst_idx)),
+	// 	IRQ_PRIO_LOWEST,
+        //         NRFX_PWM_INST_HANDLER_GET(pwm_instance->drv_inst_idx),
+        //         0, 0);
+
+	// IRQ_CONNECT(DT_IRQN(PWM(idx)), DT_IRQ(PWM(idx), priority),
+	// 	    nrfx_isr, nrfx_pwm_##idx##_irq_handler, 0);
+
+	// ret = nrfx_pwm_reconfigure(pwm_instance, &pwm_initial_config);
+	// if (ret == NRFX_ERROR_INVALID_STATE) {
+	// 	LOG_ERR("Cannot reconfigure, pwm was not initialized");
+	// 	return -EINVAL;
+	// }
+	// if (ret == NRFX_ERROR_BUSY) {
+	// 	LOG_ERR("Cannot reconfigure, pwm is running");
+	// 	return -EBUSY;
+	// }
 
 	return 0;
 }
