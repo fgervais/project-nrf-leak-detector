@@ -206,6 +206,50 @@ void sound_enter_world()
 	play_next_note(&sound_effect_playback);
 }
 
+void sound_game_over()
+{
+	sound_effect_playback.note_to_play = 0;
+	sound_effect_playback.number_of_notes = 0;
+
+	// add_note(&sound_effect_playback, NOTE_G5, 150);
+	// add_note(&sound_effect_playback, 0, 50);
+	// add_note(&sound_effect_playback, NOTE_G5, 150);
+	// add_note(&sound_effect_playback, 0, 50);
+	// add_note(&sound_effect_playback, NOTE_G5, 150);
+	// add_note(&sound_effect_playback, 0, 50);
+	// add_note(&sound_effect_playback, NOTE_D6, 400);
+	// add_note(&sound_effect_playback, NOTE_C6, 200);
+	// add_note(&sound_effect_playback, NOTE_A5, 200);
+	// add_note(&sound_effect_playback, NOTE_F5, 200);
+	// add_note(&sound_effect_playback, NOTE_G6, 200);
+	// // add_note(&sound_effect_playback, 0, 400);
+	// // add_note(&sound_effect_playback, NOTE_CS6, 200);
+	// // add_note(&sound_effect_playback, NOTE_D6, 200);
+	// // add_note(&sound_effect_playback, NOTE_G5, 200);
+
+	add_note(&sound_effect_playback, NOTE_G5, 150);
+	add_note(&sound_effect_playback, 0, 50);
+	add_note(&sound_effect_playback, NOTE_G5, 150);
+	add_note(&sound_effect_playback, 0, 50);
+	add_note(&sound_effect_playback, NOTE_G5, 150);
+	add_note(&sound_effect_playback, 0, 50);
+	add_note(&sound_effect_playback, NOTE_D6, 400);
+	add_note(&sound_effect_playback, NOTE_C6, 200);
+	add_note(&sound_effect_playback, NOTE_A5, 200);
+	add_note(&sound_effect_playback, NOTE_F5, 200);
+	add_note(&sound_effect_playback, NOTE_AS5, 200);
+	add_note(&sound_effect_playback, 0, 400);
+	add_note(&sound_effect_playback, NOTE_CS5, 200);
+	add_note(&sound_effect_playback, NOTE_D5, 200);
+	add_note(&sound_effect_playback, NOTE_G5, 400);
+	// add_note(&sound_effect_playback, 0, 400);
+	// add_note(&sound_effect_playback, NOTE_CS6, 200);
+	// add_note(&sound_effect_playback, NOTE_D6, 200);
+	// add_note(&sound_effect_playback, NOTE_G5, 200);
+
+	play_next_note(&sound_effect_playback);
+}
+
 static uint16_t alarm_sequence_values[] = {
 	TOP_VALUE / 2,	// 50% PWM
 	TOP_VALUE,	// 0%

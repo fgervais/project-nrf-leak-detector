@@ -83,8 +83,9 @@ int main(void)
 	}
 	else {
 		LOG_INF("Playing 1up");
-		// sound_1up(&buzzer_dt_spec);
-		sound_enter_world(&buzzer_dt_spec);
+		// sound_1up();
+		// sound_enter_world();
+		sound_game_over();
 		k_sleep(K_SECONDS(2));
 		return 0;
 	}
