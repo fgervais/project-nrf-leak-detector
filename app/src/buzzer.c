@@ -128,15 +128,18 @@ static struct sound_effect_playback sound_effect_playback;
 // 	return (note_duration_ms / 1000.0f) / (1.0f / PWM_CLOCK_HZ);
 // }
 
-static void configure_note(struct sound_effect_playback *sep,
-			       int note_index,
-			       float note, float note_duration_ms)
+static void add_note(struct sound_effect_playback *sep,
+		     float note, float note_duration_ms)
 {
+	int note_index = sep->number_of_notes;
+
 	sep->notes_top_value[note_index] = (1.0f / note) / (1.0f / PWM_CLOCK_HZ);
 	sep->notes_repeat_value[note_index] = (
 		(note_duration_ms / 1000.0f)
 		/ ((1.0f / PWM_CLOCK_HZ) * sep->notes_top_value[note_index])
 	);
+
+	sep->number_of_notes++;
 }
 
 static void play_next_note(struct sound_effect_playback *sep)
@@ -170,31 +173,37 @@ static void play_next_note(struct sound_effect_playback *sep)
 void sound_1up()
 {
 	sound_effect_playback.note_to_play = 0;
-	sound_effect_playback.number_of_notes = 6;
+	sound_effect_playback.number_of_notes = 0;
 
-	configure_note(&sound_effect_playback, 0, NOTE_E6, 135);
-	configure_note(&sound_effect_playback, 1, NOTE_G6, 135);
-	configure_note(&sound_effect_playback, 2, NOTE_E7, 135);
-	configure_note(&sound_effect_playback, 3, NOTE_C7, 135);
-	configure_note(&sound_effect_playback, 4, NOTE_D7, 135);
-	configure_note(&sound_effect_playback, 5, NOTE_G7, 135);
-
-	// configure_note(&sound_effect_playback, 0, 1314, 137);
-	// configure_note(&sound_effect_playback, 1, 1560, 133);
-	// configure_note(&sound_effect_playback, 2, 2602, 133);
-	// configure_note(&sound_effect_playback, 3, 2076, 133);
-	// configure_note(&sound_effect_playback, 4, 2335, 133);
-	// configure_note(&sound_effect_playback, 5, 3111, 133);
+	add_note(&sound_effect_playback, NOTE_E6, 135);
+	add_note(&sound_effect_playback, NOTE_G6, 135);
+	add_note(&sound_effect_playback, NOTE_E7, 135);
+	add_note(&sound_effect_playback, NOTE_C7, 135);
+	add_note(&sound_effect_playback, NOTE_D7, 135);
+	add_note(&sound_effect_playback, NOTE_G7, 135);
 
 	play_next_note(&sound_effect_playback);
+}
 
-	// play_tone(buzzer, NOTE_E6, 125);
-	// play_tone(buzzer, NOTE_G6, 125);
-	// play_tone(buzzer, NOTE_E7, 125);
-	// play_tone(buzzer, NOTE_C7, 125);
-	// play_tone(buzzer, NOTE_D7, 125);
-	// play_tone(buzzer, NOTE_G7, 125);
-	// no_tone(buzzer);
+void sound_enter_world()
+{
+	sound_effect_playback.note_to_play = 0;
+	sound_effect_playback.number_of_notes = 0;
+
+	add_note(&sound_effect_playback, NOTE_FS8, 66);
+	add_note(&sound_effect_playback, NOTE_DS8, 66);
+	add_note(&sound_effect_playback, NOTE_C8, 66);
+	add_note(&sound_effect_playback, NOTE_A7, 66);
+	add_note(&sound_effect_playback, NOTE_G7, 66);
+	add_note(&sound_effect_playback, NOTE_E7, 66);
+	add_note(&sound_effect_playback, NOTE_CS7, 66);
+	add_note(&sound_effect_playback, NOTE_A6, 66);
+	add_note(&sound_effect_playback, NOTE_G6, 66);
+	add_note(&sound_effect_playback, NOTE_E6, 66);
+	add_note(&sound_effect_playback, NOTE_CS6, 66);
+	add_note(&sound_effect_playback, NOTE_A5, 300);
+
+	play_next_note(&sound_effect_playback);
 }
 
 static uint16_t alarm_sequence_values[] = {
