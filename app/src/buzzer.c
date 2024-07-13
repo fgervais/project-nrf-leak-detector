@@ -9,8 +9,9 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
 #include "music_notes.h"
 
 
+#define PWM_BASE_CLOCK		16000000.0f
 #define PWM_PRESCALER		1.0f
-#define PWM_CLOCK_HZ		(16000000.0f / PWM_PRESCALER)
+#define PWM_CLOCK_HZ		(PWM_BASE_CLOCK / PWM_PRESCALER)
 
 #define DESIRED_FREQ_HZ		4000.0f
 #define TOP_VALUE		((1.0f/DESIRED_FREQ_HZ) / (1.0f/PWM_CLOCK_HZ))
@@ -18,6 +19,8 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
 #define BUZZER_PERIOD_SEC 	0.500f
 // #define VALUE_REPEAT		((BUZZER_PERIOD_SEC / 2.0f) / (1.0f/DESIRED_FREQ_HZ))
 #define VALUE_REPEAT		100
+
+#define MAX_NUMBER_OF_NOTES	32
 
 
 /*
@@ -33,12 +36,14 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
  * loaded from RAM, and the peripheral stops at the end of the current PWM period.
  * For sequences with configured repeating of duty cycle values, this might
  * result in less than the requested number of repeats of the last value.
- */ 
+ */
 struct sound_effect_playback {
 	nrfx_pwm_t *pwm_instance;
 	uint16_t note_value[2];
-	uint16_t notes_top_value[128];
-	uint16_t notes_repeat_value[128];
+	uint16_t notes_base_clock[MAX_NUMBER_OF_NOTES];
+	uint16_t notes_top_value[MAX_NUMBER_OF_NOTES];
+	uint16_t notes_value[MAX_NUMBER_OF_NOTES];
+	uint32_t notes_repeat_value[MAX_NUMBER_OF_NOTES];
 	int number_of_notes;
 	int note_to_play;
 };
@@ -128,31 +133,82 @@ static struct sound_effect_playback sound_effect_playback;
 // 	return (note_duration_ms / 1000.0f) / (1.0f / PWM_CLOCK_HZ);
 // }
 
-static void add_note(struct sound_effect_playback *sep,
+static int add_note(struct sound_effect_playback *sep,
 		     float note, float note_duration_ms)
 {
 	int note_index = sep->number_of_notes;
+	// uint8_t prescaler;
+	uint8_t clk_divider;
+	uint32_t top_value;
+	uint32_t pwm_clock;
 
-	sep->notes_top_value[note_index] = (1.0f / note) / (1.0f / PWM_CLOCK_HZ);
+	// for (prescaler = 1; prescaler < 128; prescaler <<= 1) {
+	// 	pwm_clock = 16000000 / prescaler;
+	// }
+
+	LOG_DBG("-----------------");
+
+	LOG_DBG("note: %d", (int)note);
+
+	if (note == 0) {
+		pwm_clock = 16000000;
+		clk_divider = 0;
+		top_value = 16000; // Gives 1ms per pwm period
+	}
+	else {
+		for (clk_divider = 0; clk_divider < 8; clk_divider++) {
+			pwm_clock = 16000000 >> clk_divider;
+
+			LOG_DBG("pwm_clock: %d", pwm_clock);
+
+			top_value = (1.0f / note) / (1.0f / pwm_clock);
+			LOG_DBG("top_value: %d", top_value);
+
+			if (top_value < (UINT16_MAX >> 1)) {
+				break;
+			}
+		}
+
+		if (clk_divider == 8) {
+			LOG_ERR("Could not find a suitable PWM divider");
+			return -EINVAL;
+		}
+	}
+
+	sep->notes_base_clock[note_index] = clk_divider;
+	sep->notes_top_value[note_index] = top_value;
+
+	if (note == 0) {
+		sep->notes_value[note_index] = top_value;
+	}
+	else {
+		sep->notes_value[note_index] = top_value / 2.0f;
+	}
+
 	sep->notes_repeat_value[note_index] = (
 		(note_duration_ms / 1000.0f)
-		/ ((1.0f / PWM_CLOCK_HZ) * sep->notes_top_value[note_index])
+		/ ((1.0f / pwm_clock) * top_value)
 	);
 
+	LOG_DBG("notes_repeat_value: %d", sep->notes_repeat_value[note_index]);
+
 	sep->number_of_notes++;
+
+	return 0;
 }
 
 static void play_next_note(struct sound_effect_playback *sep)
 {
-	sep->note_value[0] = sep->notes_top_value[sep->note_to_play] / 2.0f;
-
 	LOG_DBG("🎹 Playing note %d", sep->note_to_play);
+	LOG_DBG("├── note base clock %d", sep->notes_base_clock[sep->note_to_play]);
 	LOG_DBG("├── note top value %d", sep->notes_top_value[sep->note_to_play]);
-	LOG_DBG("├── note value %d", sep->note_value[0]);
+	LOG_DBG("├── note value %d", sep->notes_value[sep->note_to_play]);
 	LOG_DBG("└── note repeat %d", sep->notes_repeat_value[sep->note_to_play]);
 
+	sep->note_value[0] = sep->notes_value[sep->note_to_play];
+
 	nrf_pwm_configure(sep->pwm_instance->p_reg,
-			  NRF_PWM_CLK_16MHz,
+			  sep->notes_base_clock[sep->note_to_play],
 			  NRF_PWM_MODE_UP,
 			  sep->notes_top_value[sep->note_to_play]);
 
@@ -240,12 +296,9 @@ void sound_game_over()
 	add_note(&sound_effect_playback, NOTE_AS5, 200);
 	add_note(&sound_effect_playback, 0, 400);
 	add_note(&sound_effect_playback, NOTE_CS5, 200);
-	add_note(&sound_effect_playback, NOTE_D5, 200);
-	add_note(&sound_effect_playback, NOTE_G5, 400);
-	// add_note(&sound_effect_playback, 0, 400);
-	// add_note(&sound_effect_playback, NOTE_CS6, 200);
-	// add_note(&sound_effect_playback, NOTE_D6, 200);
-	// add_note(&sound_effect_playback, NOTE_G5, 200);
+	add_note(&sound_effect_playback, NOTE_D5, 150);
+	add_note(&sound_effect_playback, 0, 50);
+	add_note(&sound_effect_playback, NOTE_G4, 200);
 
 	play_next_note(&sound_effect_playback);
 }
