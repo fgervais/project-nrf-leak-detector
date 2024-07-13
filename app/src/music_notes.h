@@ -87,3 +87,11 @@
 #define NOTE_CS8 4435
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
+#define NOTE_E8  5274
+#define NOTE_F8  5587
+#define NOTE_FS8 5919
+#define NOTE_G8  6271
+#define NOTE_GS8 6644
+#define NOTE_A8  7040
+#define NOTE_AS8 7458
+#define NOTE_B8  7902

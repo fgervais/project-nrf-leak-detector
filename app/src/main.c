@@ -46,6 +46,7 @@ static int system_off(void)
 int main(void)
 {
 	uint32_t reset_cause;
+	int ret;
 
 	nrfx_err_t err;
 	nrfx_lpcomp_config_t lpcomp_config = {
@@ -55,24 +56,36 @@ int main(void)
 	    .input  = (nrf_lpcomp_input_t)NRF_LPCOMP_INPUT_2,
 	    .interrupt_priority = NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY
 	};
-	static const struct pwm_dt_spec buzzer = PWM_DT_SPEC_GET(DT_PATH(buzzer));
+	const struct pwm_dt_spec buzzer_dt_spec = PWM_DT_SPEC_GET(DT_PATH(buzzer));
 
 
 	LOG_INF("\n\n🚀 MAIN START (%s) 🚀\n", APP_VERSION_FULL);
 
 	reset_cause = show_and_clear_reset_cause();
 
-	if (!device_is_ready(buzzer.dev)) {
-		printk("%s: device not ready.\n", buzzer.dev->name);
+	if (!device_is_ready(buzzer_dt_spec.dev)) {
+		printk("%s: device not ready.\n", buzzer_dt_spec.dev->name);
+		return 1;
+	}
+
+	ret = buzzer_init(&buzzer_dt_spec);
+	if (ret < 0) {
+		LOG_ERR("Could not initialize buzzer");
 		return 1;
 	}
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
-		alarm(&buzzer, ALARM_TIME_SEC);
+		buzzer_alarm(ALARM_TIME_SEC);
 		goto shutdown;
 	}
 	else {
-		sound_1up(&buzzer);
+		LOG_INF("Playing 1up");
+		// smb3_sound_1up();
+		// smb3_sound_enter_world();
+		// smd3_sound_game_over();
+		smb2_sound_game_over();
+		// smb2_main_theme();
+
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
@@ -90,6 +103,11 @@ int main(void)
 	LOG_INF("🆗 initialized");
 
 shutdown:
+	while (buzzer_is_running(&buzzer_dt_spec)) {
+		LOG_INF("Waiting for buzzer to finish");
+		k_sleep(K_SECONDS(1));
+	}
+
 	system_off();
 
 	return 0;
