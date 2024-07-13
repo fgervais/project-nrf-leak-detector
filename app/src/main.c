@@ -80,11 +80,12 @@ int main(void)
 	}
 	else {
 		LOG_INF("Playing 1up");
-		// sound_1up();
-		// sound_enter_world();
-		// sound_game_over();
-		// smb2_sound_game_over();
-		smb2_main_theme();
+		// smb3_sound_1up();
+		// smb3_sound_enter_world();
+		// smd3_sound_game_over();
+		smb2_sound_game_over();
+		// smb2_main_theme();
+
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
