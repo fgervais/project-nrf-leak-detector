@@ -82,7 +82,8 @@ int main(void)
 		LOG_INF("Playing 1up");
 		// sound_1up();
 		// sound_enter_world();
-		sound_game_over();
+		// sound_game_over();
+		smb2_sound_game_over();
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);

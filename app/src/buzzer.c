@@ -176,7 +176,7 @@ static void play_next_note(struct buzzer *buzzer)
 	sep->note_to_play++;
 }
 
-void sound_1up()
+void smb3_sound_1up()
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -193,7 +193,7 @@ void sound_1up()
 	play_next_note(&buzzer);
 }
 
-void sound_enter_world()
+void smb3_sound_enter_world()
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -216,7 +216,7 @@ void sound_enter_world()
 	play_next_note(&buzzer);
 }
 
-void sound_game_over()
+void smd3_sound_game_over()
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -239,6 +239,32 @@ void sound_game_over()
 	add_note(&buzzer.sep, NOTE_D5, 150);
 	add_note(&buzzer.sep, 0, 50);
 	add_note(&buzzer.sep, NOTE_G4, 200);
+
+	play_next_note(&buzzer);
+}
+
+void smb2_sound_game_over()
+{
+	buzzer.mode = SOUND_EFFECT;
+
+	buzzer.sep.note_to_play = 0;
+	buzzer.sep.number_of_notes = 0;
+
+	add_note(&buzzer.sep, NOTE_G6, 100);
+	add_note(&buzzer.sep, NOTE_A6, 100);
+	add_note(&buzzer.sep, NOTE_C7, 100);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_G5, 100);
+	add_note(&buzzer.sep, NOTE_A5, 100);
+	add_note(&buzzer.sep, NOTE_C6, 100);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_G4, 100);
+	add_note(&buzzer.sep, NOTE_A4, 100);
+	add_note(&buzzer.sep, NOTE_C5, 100);
+	add_note(&buzzer.sep, 0, 100);
+	add_note(&buzzer.sep, NOTE_F4, 100);
+	add_note(&buzzer.sep, 0, 100);
+	add_note(&buzzer.sep, NOTE_E4, 150);
 
 	play_next_note(&buzzer);
 }
