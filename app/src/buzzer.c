@@ -9,16 +9,16 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
 #include "music_notes.h"
 
 
-#define PWM_BASE_CLOCK		16000000.0f
-#define PWM_PRESCALER		1.0f
-#define PWM_CLOCK_HZ		(PWM_BASE_CLOCK / PWM_PRESCALER)
+#define ALARM_PWM_BASE_CLOCK	16000000.0f
+#define ALARM_PWM_PRESCALER	1.0f
+#define ALARM_PWM_CLOCK_HZ	(ALARM_PWM_BASE_CLOCK / ALARM_PWM_PRESCALER)
 
-#define DESIRED_FREQ_HZ		4000.0f
-#define TOP_VALUE		((1.0f/DESIRED_FREQ_HZ) / (1.0f/PWM_CLOCK_HZ))
+#define ALARM_DESIRED_FREQ_HZ	4000.0f
+#define ALARM_TOP_VALUE		((1.0f/ALARM_DESIRED_FREQ_HZ) / (1.0f/ALARM_PWM_CLOCK_HZ))
 
-#define BUZZER_PERIOD_SEC 	0.500f
-// #define VALUE_REPEAT		((BUZZER_PERIOD_SEC / 2.0f) / (1.0f/DESIRED_FREQ_HZ))
-#define VALUE_REPEAT		100
+#define ALARM_PERIOD_SEC 	0.500f
+// #define ALARM_VALUE_REPEAT		((ALARM_PERIOD_SEC / 2.0f) / (1.0f/ALARM_DESIRED_FREQ_HZ))
+#define ALARM_VALUE_REPEAT		100
 
 #define MAX_NUMBER_OF_NOTES	32
 
@@ -56,6 +56,7 @@ struct buzzer {
 	nrfx_pwm_t *pwm_instance;
 	enum mode mode;
 	struct sound_effect_playback sep;
+	uint16_t alarm_sequence_values[2];
 };
 
 
@@ -78,7 +79,12 @@ static void pwm_handler(nrfx_pwm_evt_type_t event_type, void *p_context)
 }
 
 
-static struct buzzer buzzer;
+static struct buzzer buzzer  = {
+	.alarm_sequence_values = {
+		ALARM_TOP_VALUE / 2,	// 50% PWM
+		ALARM_TOP_VALUE,	// 0%
+	},
+};
 
 
 static int add_note(struct sound_effect_playback *sep,
@@ -237,11 +243,6 @@ void sound_game_over()
 	play_next_note(&buzzer);
 }
 
-static uint16_t alarm_sequence_values[] = {
-	TOP_VALUE / 2,	// 50% PWM
-	TOP_VALUE,	// 0%
-};
-
 int buzzer_alarm(const struct pwm_dt_spec *spec, int seconds)
 {
 	const nrfx_pwm_t *pwm_instance = spec->dev->config;
@@ -249,14 +250,14 @@ int buzzer_alarm(const struct pwm_dt_spec *spec, int seconds)
 	buzzer.mode = ALARM;
 
 	nrf_pwm_sequence_t alarm_sequence = {
-		.values.p_raw = alarm_sequence_values,
-		.length = ARRAY_SIZE(alarm_sequence_values),
-		.repeats = VALUE_REPEAT,
+		.values.p_raw = buzzer.alarm_sequence_values,
+		.length = ARRAY_SIZE(buzzer.alarm_sequence_values),
+		.repeats = ALARM_VALUE_REPEAT,
 	};
 
 	nrfx_pwm_simple_playback(pwm_instance,
 				 &alarm_sequence,
-				 seconds / BUZZER_PERIOD_SEC,
+				 seconds / ALARM_PERIOD_SEC,
 				 NRFX_PWM_FLAG_STOP);
 
 	return 0;
@@ -278,7 +279,7 @@ int buzzer_init(const struct pwm_dt_spec *spec)
 		.skip_psel_cfg = true,
 		.base_clock = NRF_PWM_CLK_16MHz,
 		.count_mode = NRF_PWM_MODE_UP,
-		.top_value = TOP_VALUE,
+		.top_value = 0,
 		.load_mode = NRF_PWM_LOAD_COMMON,
 		.step_mode = NRF_PWM_STEP_AUTO,
 	};
