@@ -75,7 +75,7 @@ int main(void)
 	}
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
-		buzzer_alarm(&buzzer_dt_spec, ALARM_TIME_SEC);
+		buzzer_alarm(ALARM_TIME_SEC);
 		goto shutdown;
 	}
 	else {

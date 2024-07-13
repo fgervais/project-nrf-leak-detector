@@ -17,8 +17,7 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
 #define ALARM_TOP_VALUE		((1.0f/ALARM_DESIRED_FREQ_HZ) / (1.0f/ALARM_PWM_CLOCK_HZ))
 
 #define ALARM_PERIOD_SEC 	0.500f
-// #define ALARM_VALUE_REPEAT		((ALARM_PERIOD_SEC / 2.0f) / (1.0f/ALARM_DESIRED_FREQ_HZ))
-#define ALARM_VALUE_REPEAT		100
+#define ALARM_VALUE_REPEAT	((ALARM_PERIOD_SEC / 2.0f) / (1.0f/ALARM_DESIRED_FREQ_HZ))
 
 #define MAX_NUMBER_OF_NOTES	32
 
@@ -176,7 +175,7 @@ static void play_next_note(struct buzzer *buzzer)
 	sep->note_to_play++;
 }
 
-void smb3_sound_1up()
+void smb3_sound_1up(void)
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -193,7 +192,7 @@ void smb3_sound_1up()
 	play_next_note(&buzzer);
 }
 
-void smb3_sound_enter_world()
+void smb3_sound_enter_world(void)
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -216,7 +215,7 @@ void smb3_sound_enter_world()
 	play_next_note(&buzzer);
 }
 
-void smd3_sound_game_over()
+void smd3_sound_game_over(void)
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -243,7 +242,7 @@ void smd3_sound_game_over()
 	play_next_note(&buzzer);
 }
 
-void smb2_sound_game_over()
+void smb2_sound_game_over(void)
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -269,7 +268,7 @@ void smb2_sound_game_over()
 	play_next_note(&buzzer);
 }
 
-void smb2_main_theme()
+void smb2_main_theme(void)
 {
 	buzzer.mode = SOUND_EFFECT;
 
@@ -295,11 +294,14 @@ void smb2_main_theme()
 	play_next_note(&buzzer);
 }
 
-int buzzer_alarm(const struct pwm_dt_spec *spec, int seconds)
+int buzzer_alarm(int seconds)
 {
-	const nrfx_pwm_t *pwm_instance = spec->dev->config;
-
 	buzzer.mode = ALARM;
+
+	nrf_pwm_configure(buzzer.pwm_instance->p_reg,
+			  LOG2(ALARM_PWM_PRESCALER) / LOG2(2),
+			  NRF_PWM_MODE_UP,
+			  ALARM_TOP_VALUE);
 
 	nrf_pwm_sequence_t alarm_sequence = {
 		.values.p_raw = buzzer.alarm_sequence_values,
@@ -307,7 +309,7 @@ int buzzer_alarm(const struct pwm_dt_spec *spec, int seconds)
 		.repeats = ALARM_VALUE_REPEAT,
 	};
 
-	nrfx_pwm_simple_playback(pwm_instance,
+	nrfx_pwm_simple_playback(buzzer.pwm_instance,
 				 &alarm_sequence,
 				 seconds / ALARM_PERIOD_SEC,
 				 NRFX_PWM_FLAG_STOP);
