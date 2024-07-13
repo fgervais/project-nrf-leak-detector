@@ -56,95 +56,26 @@ static void pwm_handler(nrfx_pwm_evt_type_t event_type, void *p_context)
 {
 	struct sound_effect_playback *sep = p_context;
 
-	LOG_INF("pwm_handler (%d)", event_type);
+	LOG_DBG("pwm_handler (%d)", event_type);
 
 	if (event_type == NRFX_PWM_EVT_STOPPED) {
 		if (sep->note_to_play < sep->number_of_notes) {
 			play_next_note(sep);
 		}
 	}
-
-	// nrfx_pwm_stop(sep->pwm_instance, 0);
 }
 
-// void beep(const struct pwm_dt_spec *buzzer)
-// {
-// 	pwm_set_dt(buzzer, PWM_USEC(250U), PWM_USEC(250U) * 0.53);
-// 	k_sleep(K_MSEC(50));
-// 	pwm_set_dt(buzzer, PWM_USEC(250U), 0);
-// 	k_sleep(K_MSEC(50));
-// }
-
-// static uint16_t tone_sequence_values[1];
-// static uint16_t notes_top_value[128];
-// static int number_of_notes;
 
 static struct sound_effect_playback sound_effect_playback;
 
-// void play_tone(const struct pwm_dt_spec *spec, int frequency_hz, int duration_ms)
-// {
-// 	const nrfx_pwm_t *pwm_instance = spec->dev->config;
-
-// 	// pwm_set_dt(spec, PWM_HZ(frequency_hz), PWM_HZ(frequency_hz) * 0.53);
-// 	nrf_pwm_configure(pwm_instance->p_reg,
-// 			  NRF_PWM_CLK_16MHz,
-// 			  NRF_PWM_MODE_UP,
-// 			  TOP_VALUE);
-
-// 	nrf_pwm_sequence_t tone_sequence = {
-// 		.values.p_raw = tone_sequence_values,
-// 		.length = ARRAY_SIZE(tone_sequence_values),
-// 		.repeats = VALUE_REPEAT,
-// 	};
-
-// 	nrfx_pwm_simple_playback(pwm_instance,
-// 				 &tone_sequence,
-// 				 (duration_ms / 1000.0f) / BUZZER_PERIOD_SEC,
-// 				 NRFX_PWM_FLAG_STOP);
-
-// 	// k_sleep(K_MSEC(duration_ms));
-// }
-
-// void no_tone(const struct pwm_dt_spec *spec)
-// {
-// 	const nrfx_pwm_t *pwm_instance = spec->dev->config;
-
-// 	// pwm_set_dt(spec, 0, 0);
-// 	nrf_pwm_configure(pwm_instance->p_reg,
-// 			  NRF_PWM_CLK_16MHz,
-// 			  NRF_PWM_MODE_UP,
-// 			  TOP_VALUE);
-// }
-
-// void sound_coin(const struct pwm_dt_spec *buzzer)
-// {
-// 	play_tone(buzzer, NOTE_B5, 100);
-// 	play_tone(buzzer, NOTE_E6, 350);
-// 	no_tone(buzzer);
-// }
-
-// static uint16_t note_to_top_value(float note)
-// {
-// 	return (1.0f / note) / (1.0f / PWM_CLOCK_HZ);
-// }
-
-// static uint16_t note_duration_to_repeat_value(float note_duration_ms)
-// {
-// 	return (note_duration_ms / 1000.0f) / (1.0f / PWM_CLOCK_HZ);
-// }
 
 static int add_note(struct sound_effect_playback *sep,
 		     float note, float note_duration_ms)
 {
 	int note_index = sep->number_of_notes;
-	// uint8_t prescaler;
 	uint8_t clk_divider;
-	uint32_t top_value;
+	uint32_t top_value; // 32bit so we can verify if is fits in 15bit
 	uint32_t pwm_clock;
-
-	// for (prescaler = 1; prescaler < 128; prescaler <<= 1) {
-	// 	pwm_clock = 16000000 / prescaler;
-	// }
 
 	LOG_DBG("-----------------");
 
@@ -158,7 +89,6 @@ static int add_note(struct sound_effect_playback *sep,
 	else {
 		for (clk_divider = 0; clk_divider < 8; clk_divider++) {
 			pwm_clock = 16000000 >> clk_divider;
-
 			LOG_DBG("pwm_clock: %d", pwm_clock);
 
 			top_value = (1.0f / note) / (1.0f / pwm_clock);
@@ -267,22 +197,6 @@ void sound_game_over()
 	sound_effect_playback.note_to_play = 0;
 	sound_effect_playback.number_of_notes = 0;
 
-	// add_note(&sound_effect_playback, NOTE_G5, 150);
-	// add_note(&sound_effect_playback, 0, 50);
-	// add_note(&sound_effect_playback, NOTE_G5, 150);
-	// add_note(&sound_effect_playback, 0, 50);
-	// add_note(&sound_effect_playback, NOTE_G5, 150);
-	// add_note(&sound_effect_playback, 0, 50);
-	// add_note(&sound_effect_playback, NOTE_D6, 400);
-	// add_note(&sound_effect_playback, NOTE_C6, 200);
-	// add_note(&sound_effect_playback, NOTE_A5, 200);
-	// add_note(&sound_effect_playback, NOTE_F5, 200);
-	// add_note(&sound_effect_playback, NOTE_G6, 200);
-	// // add_note(&sound_effect_playback, 0, 400);
-	// // add_note(&sound_effect_playback, NOTE_CS6, 200);
-	// // add_note(&sound_effect_playback, NOTE_D6, 200);
-	// // add_note(&sound_effect_playback, NOTE_G5, 200);
-
 	add_note(&sound_effect_playback, NOTE_G5, 150);
 	add_note(&sound_effect_playback, 0, 50);
 	add_note(&sound_effect_playback, NOTE_G5, 150);
@@ -356,7 +270,6 @@ int buzzer_init(const struct pwm_dt_spec *buzzer)
 	nrfx_pwm_uninit(pwm_instance);
 
 	ret = nrfx_pwm_init(pwm_instance, &pwm_initial_config,
-                        	 // pwm_handler, NULL);
                         	 pwm_handler, &sound_effect_playback);
 	if (ret != NRFX_SUCCESS) {
 		LOG_ERR("Cannot initialize pwm");
