@@ -38,7 +38,6 @@ LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
  * result in less than the requested number of repeats of the last value.
  */
 struct sound_effect_playback {
-	nrfx_pwm_t *pwm_instance;
 	uint16_t note_value[2];
 	uint16_t notes_base_clock[MAX_NUMBER_OF_NOTES];
 	uint16_t notes_top_value[MAX_NUMBER_OF_NOTES];
@@ -48,25 +47,38 @@ struct sound_effect_playback {
 	int note_to_play;
 };
 
+enum mode {
+	ALARM,
+	SOUND_EFFECT,
+};
 
-static void play_next_note(struct sound_effect_playback *sep);
+struct buzzer {
+	nrfx_pwm_t *pwm_instance;
+	enum mode mode;
+	struct sound_effect_playback sep;
+};
+
+
+static void play_next_note(struct buzzer *buzzer);
 
 
 static void pwm_handler(nrfx_pwm_evt_type_t event_type, void *p_context)
 {
-	struct sound_effect_playback *sep = p_context;
+	struct buzzer *buzzer = p_context;
+	struct sound_effect_playback *sep = &buzzer->sep;
 
 	LOG_DBG("pwm_handler (%d)", event_type);
 
 	if (event_type == NRFX_PWM_EVT_STOPPED) {
-		if (sep->note_to_play < sep->number_of_notes) {
-			play_next_note(sep);
+		if (buzzer->mode == SOUND_EFFECT
+		    && sep->note_to_play < sep->number_of_notes) {
+			play_next_note(buzzer);
 		}
 	}
 }
 
 
-static struct sound_effect_playback sound_effect_playback;
+static struct buzzer buzzer;
 
 
 static int add_note(struct sound_effect_playback *sep,
@@ -127,8 +139,10 @@ static int add_note(struct sound_effect_playback *sep,
 	return 0;
 }
 
-static void play_next_note(struct sound_effect_playback *sep)
+static void play_next_note(struct buzzer *buzzer)
 {
+	struct sound_effect_playback *sep = &buzzer->sep;
+
 	LOG_DBG("🎹 Playing note %d", sep->note_to_play);
 	LOG_DBG("├── note base clock %d", sep->notes_base_clock[sep->note_to_play]);
 	LOG_DBG("├── note top value %d", sep->notes_top_value[sep->note_to_play]);
@@ -137,7 +151,7 @@ static void play_next_note(struct sound_effect_playback *sep)
 
 	sep->note_value[0] = sep->notes_value[sep->note_to_play];
 
-	nrf_pwm_configure(sep->pwm_instance->p_reg,
+	nrf_pwm_configure(buzzer->pwm_instance->p_reg,
 			  sep->notes_base_clock[sep->note_to_play],
 			  NRF_PWM_MODE_UP,
 			  sep->notes_top_value[sep->note_to_play]);
@@ -148,7 +162,7 @@ static void play_next_note(struct sound_effect_playback *sep)
 		.repeats = sep->notes_repeat_value[sep->note_to_play],
 	};
 
-	nrfx_pwm_simple_playback(sep->pwm_instance,
+	nrfx_pwm_simple_playback(buzzer->pwm_instance,
 				 &note_sequence,
 				 1,
 				 NRFX_PWM_FLAG_STOP);
@@ -158,63 +172,69 @@ static void play_next_note(struct sound_effect_playback *sep)
 
 void sound_1up()
 {
-	sound_effect_playback.note_to_play = 0;
-	sound_effect_playback.number_of_notes = 0;
+	buzzer.mode = SOUND_EFFECT;
 
-	add_note(&sound_effect_playback, NOTE_E6, 135);
-	add_note(&sound_effect_playback, NOTE_G6, 135);
-	add_note(&sound_effect_playback, NOTE_E7, 135);
-	add_note(&sound_effect_playback, NOTE_C7, 135);
-	add_note(&sound_effect_playback, NOTE_D7, 135);
-	add_note(&sound_effect_playback, NOTE_G7, 135);
+	buzzer.sep.note_to_play = 0;
+	buzzer.sep.number_of_notes = 0;
 
-	play_next_note(&sound_effect_playback);
+	add_note(&buzzer.sep, NOTE_E6, 135);
+	add_note(&buzzer.sep, NOTE_G6, 135);
+	add_note(&buzzer.sep, NOTE_E7, 135);
+	add_note(&buzzer.sep, NOTE_C7, 135);
+	add_note(&buzzer.sep, NOTE_D7, 135);
+	add_note(&buzzer.sep, NOTE_G7, 135);
+
+	play_next_note(&buzzer);
 }
 
 void sound_enter_world()
 {
-	sound_effect_playback.note_to_play = 0;
-	sound_effect_playback.number_of_notes = 0;
+	buzzer.mode = SOUND_EFFECT;
 
-	add_note(&sound_effect_playback, NOTE_FS8, 66);
-	add_note(&sound_effect_playback, NOTE_DS8, 66);
-	add_note(&sound_effect_playback, NOTE_C8, 66);
-	add_note(&sound_effect_playback, NOTE_A7, 66);
-	add_note(&sound_effect_playback, NOTE_G7, 66);
-	add_note(&sound_effect_playback, NOTE_E7, 66);
-	add_note(&sound_effect_playback, NOTE_CS7, 66);
-	add_note(&sound_effect_playback, NOTE_A6, 66);
-	add_note(&sound_effect_playback, NOTE_G6, 66);
-	add_note(&sound_effect_playback, NOTE_E6, 66);
-	add_note(&sound_effect_playback, NOTE_CS6, 66);
-	add_note(&sound_effect_playback, NOTE_A5, 300);
+	buzzer.sep.note_to_play = 0;
+	buzzer.sep.number_of_notes = 0;
 
-	play_next_note(&sound_effect_playback);
+	add_note(&buzzer.sep, NOTE_FS8, 66);
+	add_note(&buzzer.sep, NOTE_DS8, 66);
+	add_note(&buzzer.sep, NOTE_C8, 66);
+	add_note(&buzzer.sep, NOTE_A7, 66);
+	add_note(&buzzer.sep, NOTE_G7, 66);
+	add_note(&buzzer.sep, NOTE_E7, 66);
+	add_note(&buzzer.sep, NOTE_CS7, 66);
+	add_note(&buzzer.sep, NOTE_A6, 66);
+	add_note(&buzzer.sep, NOTE_G6, 66);
+	add_note(&buzzer.sep, NOTE_E6, 66);
+	add_note(&buzzer.sep, NOTE_CS6, 66);
+	add_note(&buzzer.sep, NOTE_A5, 300);
+
+	play_next_note(&buzzer);
 }
 
 void sound_game_over()
 {
-	sound_effect_playback.note_to_play = 0;
-	sound_effect_playback.number_of_notes = 0;
+	buzzer.mode = SOUND_EFFECT;
 
-	add_note(&sound_effect_playback, NOTE_G5, 150);
-	add_note(&sound_effect_playback, 0, 50);
-	add_note(&sound_effect_playback, NOTE_G5, 150);
-	add_note(&sound_effect_playback, 0, 50);
-	add_note(&sound_effect_playback, NOTE_G5, 150);
-	add_note(&sound_effect_playback, 0, 50);
-	add_note(&sound_effect_playback, NOTE_D6, 400);
-	add_note(&sound_effect_playback, NOTE_C6, 200);
-	add_note(&sound_effect_playback, NOTE_A5, 200);
-	add_note(&sound_effect_playback, NOTE_F5, 200);
-	add_note(&sound_effect_playback, NOTE_AS5, 200);
-	add_note(&sound_effect_playback, 0, 400);
-	add_note(&sound_effect_playback, NOTE_CS5, 200);
-	add_note(&sound_effect_playback, NOTE_D5, 150);
-	add_note(&sound_effect_playback, 0, 50);
-	add_note(&sound_effect_playback, NOTE_G4, 200);
+	buzzer.sep.note_to_play = 0;
+	buzzer.sep.number_of_notes = 0;
 
-	play_next_note(&sound_effect_playback);
+	add_note(&buzzer.sep, NOTE_G5, 150);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_G5, 150);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_G5, 150);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_D6, 400);
+	add_note(&buzzer.sep, NOTE_C6, 200);
+	add_note(&buzzer.sep, NOTE_A5, 200);
+	add_note(&buzzer.sep, NOTE_F5, 200);
+	add_note(&buzzer.sep, NOTE_AS5, 200);
+	add_note(&buzzer.sep, 0, 400);
+	add_note(&buzzer.sep, NOTE_CS5, 200);
+	add_note(&buzzer.sep, NOTE_D5, 150);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_G4, 200);
+
+	play_next_note(&buzzer);
 }
 
 static uint16_t alarm_sequence_values[] = {
@@ -222,9 +242,11 @@ static uint16_t alarm_sequence_values[] = {
 	TOP_VALUE,	// 0%
 };
 
-int buzzer_alarm(const struct pwm_dt_spec *buzzer, int seconds)
+int buzzer_alarm(const struct pwm_dt_spec *spec, int seconds)
 {
-	const nrfx_pwm_t *pwm_instance = buzzer->dev->config;
+	const nrfx_pwm_t *pwm_instance = spec->dev->config;
+
+	buzzer.mode = ALARM;
 
 	nrf_pwm_sequence_t alarm_sequence = {
 		.values.p_raw = alarm_sequence_values,
@@ -247,7 +269,7 @@ bool buzzer_is_running(const struct pwm_dt_spec *buzzer)
 	return !nrfx_pwm_stopped_check(pwm_instance);
 }
 
-int buzzer_init(const struct pwm_dt_spec *buzzer)
+int buzzer_init(const struct pwm_dt_spec *spec)
 {
 	int ret;
 
@@ -263,14 +285,14 @@ int buzzer_init(const struct pwm_dt_spec *buzzer)
 
 	// We cheat here but we can do it since `nrfx_pwm_t`
 	// is the first member of the struct.
-	const nrfx_pwm_t *pwm_instance = buzzer->dev->config;
+	const nrfx_pwm_t *pwm_instance = spec->dev->config;
 
-	sound_effect_playback.pwm_instance =(nrfx_pwm_t *)pwm_instance;
+	buzzer.pwm_instance =(nrfx_pwm_t *)pwm_instance;
 
 	nrfx_pwm_uninit(pwm_instance);
 
 	ret = nrfx_pwm_init(pwm_instance, &pwm_initial_config,
-                        	 pwm_handler, &sound_effect_playback);
+                        	 pwm_handler, &buzzer);
 	if (ret != NRFX_SUCCESS) {
 		LOG_ERR("Cannot initialize pwm");
 		return -EIO;
