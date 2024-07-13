@@ -83,7 +83,8 @@ int main(void)
 		// sound_1up();
 		// sound_enter_world();
 		// sound_game_over();
-		smb2_sound_game_over();
+		// smb2_sound_game_over();
+		smb2_main_theme();
 	}
 
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);

@@ -269,6 +269,32 @@ void smb2_sound_game_over()
 	play_next_note(&buzzer);
 }
 
+void smb2_main_theme()
+{
+	buzzer.mode = SOUND_EFFECT;
+
+	buzzer.sep.note_to_play = 0;
+	buzzer.sep.number_of_notes = 0;
+
+	add_note(&buzzer.sep, NOTE_G6, 100);
+	add_note(&buzzer.sep, NOTE_FS6, 100);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_F6, 100);
+	add_note(&buzzer.sep, NOTE_D6, 100);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_B5, 100);
+	add_note(&buzzer.sep, NOTE_A5, 100);
+	add_note(&buzzer.sep, 0, 50);
+	add_note(&buzzer.sep, NOTE_GS5, 100);
+	add_note(&buzzer.sep, NOTE_G5, 100);
+	add_note(&buzzer.sep, 0, 150);
+	add_note(&buzzer.sep, NOTE_G6, 100);
+	add_note(&buzzer.sep, 0, 200);
+	add_note(&buzzer.sep, NOTE_G5, 200);
+
+	play_next_note(&buzzer);
+}
+
 int buzzer_alarm(const struct pwm_dt_spec *spec, int seconds)
 {
 	const nrfx_pwm_t *pwm_instance = spec->dev->config;
