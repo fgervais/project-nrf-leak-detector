@@ -357,17 +357,5 @@ int buzzer_init(const struct pwm_dt_spec *spec)
 		    DT_IRQ(DT_NODELABEL(pwm0), priority),
 		    nrfx_isr, NRFX_PWM_INST_HANDLER_GET(0), 0);
 
-
-
-	// ret = nrfx_pwm_reconfigure(pwm_instance, &pwm_initial_config);
-	// if (ret == NRFX_ERROR_INVALID_STATE) {
-	// 	LOG_ERR("Cannot reconfigure, pwm was not initialized");
-	// 	return -EINVAL;
-	// }
-	// if (ret == NRFX_ERROR_BUSY) {
-	// 	LOG_ERR("Cannot reconfigure, pwm is running");
-	// 	return -EBUSY;
-	// }
-
 	return 0;
 }
