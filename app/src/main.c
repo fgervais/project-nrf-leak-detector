@@ -90,16 +90,6 @@ int main(void)
 
 	if (is_reset_cause_lpcomp(reset_cause)) {
 		buzzer_alarm(ALARM_TIME_SEC);
-		goto shutdown;
-	}
-	else {
-		LOG_INF("Playing 1up");
-		// smb3_sound_1up();
-		// smb3_sound_enter_world();
-		// smd3_sound_game_over();
-		smb2_sound_game_over();
-		// smb2_main_theme();
-
 	}
 
 	ret = uid_init();
@@ -117,12 +107,6 @@ int main(void)
 		return ret;
 	}
 
-	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_comp_init error: %08x", err);
-		return 1;
-	}
-
 	LOG_INF("💤 waiting for openthread to be ready");
 	openthread_wait_for_ready();
 	// Something else is not ready, not sure what
@@ -138,15 +122,30 @@ int main(void)
 	ha_set_binary_sensor_state(&leak_detected_sensor,
 				   is_reset_cause_lpcomp(reset_cause));
 
-	IRQ_CONNECT(COMP_LPCOMP_IRQn,
-		    IRQ_PRIO_LOWEST,
-		    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
 
-	nrfx_lpcomp_enable();
+	if (!is_reset_cause_lpcomp(reset_cause)) {
+		err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
+		if (err != NRFX_SUCCESS) {
+			LOG_ERR("nrfx_comp_init error: %08x", err);
+			return 1;
+		}
 
-	LOG_INF("🆗 initialized");
+		IRQ_CONNECT(COMP_LPCOMP_IRQn,
+			    IRQ_PRIO_LOWEST,
+			    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
 
-shutdown:
+		nrfx_lpcomp_enable();
+
+		LOG_INF("🆗 initialized");
+
+		LOG_INF("Playing detector ready sound");
+		// smb3_sound_1up();
+		// smb3_sound_enter_world();
+		// smd3_sound_game_over();
+		smb2_sound_game_over();
+		// smb2_main_theme();
+	}
+
 	while (buzzer_is_running(&buzzer_dt_spec)) {
 		LOG_INF("Waiting for buzzer to finish");
 		k_sleep(K_SECONDS(1));
