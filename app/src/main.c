@@ -12,12 +12,25 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include <app_version.h>
-#include <reset.h>
+#include <mymodule/base/ha.h>
+#include <mymodule/base/mqtt.h>
+#include <mymodule/base/openthread.h>
+#include <mymodule/base/reset.h>
+#include <mymodule/base/uid.h>
 
 #include "buzzer.h"
 
 
-#define ALARM_TIME_SEC	60
+#define ALARM_TIME_SEC		60
+#define HA_RETRY_DELAY_SECONDS	10
+
+
+static struct ha_sensor leak_detected_sensor = {
+	.type = HA_BINARY_SENSOR_TYPE,
+	.name = "Leak",
+	.device_class = "problem",
+	.retain = true,
+};
 
 
 static void comparator_handler(nrf_lpcomp_event_t event)
@@ -47,6 +60,7 @@ int main(void)
 {
 	uint32_t reset_cause;
 	int ret;
+	bool inhibit_discovery;
 
 	nrfx_err_t err;
 	nrfx_lpcomp_config_t lpcomp_config = {
@@ -88,14 +102,44 @@ int main(void)
 
 	}
 
+	ret = uid_init();
+	if (ret < 0) {
+		LOG_ERR("Could not init uid module");
+		return ret;
+	}
+
+	ret = uid_generate_unique_id(leak_detected_sensor.unique_id,
+				     sizeof(leak_detected_sensor.unique_id),
+				     "nrf52840", "leak",
+				     uid_get_device_id());
+	if (ret < 0) {
+		LOG_ERR("Could not generate leak sensor unique id");
+		return ret;
+	}
+
 	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_comp_init error: %08x", err);
 		return 1;
 	}
 
+	LOG_INF("💤 waiting for openthread to be ready");
+	openthread_wait_for_ready();
+	// Something else is not ready, not sure what
+	k_sleep(K_MSEC(100));
+
+	// mqtt_watchdog_init(wdt, mqtt_wdt_chan_id);
+	inhibit_discovery = is_reset_cause_lpcomp(reset_cause);
+	ha_start(uid_get_device_id(), inhibit_discovery);
+
+	ha_register_sensor_retry(&leak_detected_sensor,
+				 HA_RETRY_DELAY_SECONDS);
+
+	ha_set_binary_sensor_state(&leak_detected_sensor,
+				   is_reset_cause_lpcomp(reset_cause));
+
 	IRQ_CONNECT(COMP_LPCOMP_IRQn,
-		    NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY-1,
+		    IRQ_PRIO_LOWEST,
 		    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
 
 	nrfx_lpcomp_enable();
