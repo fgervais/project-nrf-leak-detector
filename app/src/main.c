@@ -88,6 +88,8 @@ int main(void)
 		return 1;
 	}
 
+	// Do only the bare minimum to start the alarm if required.
+	// This is the priority.
 	if (is_reset_cause_lpcomp(reset_cause)) {
 		buzzer_alarm(ALARM_TIME_SEC);
 	}
