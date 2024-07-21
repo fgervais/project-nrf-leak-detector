@@ -129,7 +129,8 @@ int main(void)
 
 	ha_set_binary_sensor_state(&leak_detected_sensor,
 				   is_reset_cause_lpcomp(reset_cause));
-
+	ha_send_binary_sensor_retry(&leak_detected_sensor,
+				    HA_RETRY_DELAY_SECONDS);
 
 	if (!is_reset_cause_lpcomp(reset_cause)) {
 		err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
