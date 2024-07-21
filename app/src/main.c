@@ -94,6 +94,12 @@ int main(void)
 		buzzer_alarm(ALARM_TIME_SEC);
 	}
 
+	ret = openthread_my_start();
+	if (ret < 0) {
+		LOG_ERR("Could not start openthread");
+		return ret;
+	}
+
 	ret = uid_init();
 	if (ret < 0) {
 		LOG_ERR("Could not init uid module");
