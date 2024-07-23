@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 
 #define ALARM_TIME_SEC		60
+#define HA_NUMBER_OF_RETRIES	3
 #define HA_RETRY_DELAY_SECONDS	10
 
 
@@ -124,15 +125,29 @@ int main(void)
 	inhibit_discovery = is_reset_cause_lpcomp(reset_cause);
 	ha_start(uid_get_device_id(), inhibit_discovery);
 
+	// On the alert path, this has not way to fail other than ENOMEM
 	ha_register_sensor_retry(&leak_detected_sensor,
-				 HA_RETRY_DELAY_SECONDS);
+				 HA_NUMBER_OF_RETRIES,
+				 HA_RETRY_DELAY_SECONDS,
+				 0);
 
 	ha_set_binary_sensor_state(&leak_detected_sensor,
 				   is_reset_cause_lpcomp(reset_cause));
-	ha_send_binary_sensor_retry(&leak_detected_sensor,
-				    HA_RETRY_DELAY_SECONDS);
 
-	if (!is_reset_cause_lpcomp(reset_cause)) {
+	if (is_reset_cause_lpcomp(reset_cause)) {
+		// Retry for about 3h, this is the last thing we will do anyway
+		ha_send_binary_sensor_retry(&leak_detected_sensor,
+				    	    11, // Last after about 3h
+					    HA_RETRY_DELAY_SECONDS,
+					    HA_RETRY_EXP_BACKOFF);
+	}
+	else {
+		ha_send_binary_sensor_retry(&leak_detected_sensor,
+				    	    HA_NUMBER_OF_RETRIES,
+					    HA_RETRY_DELAY_SECONDS,
+					    0);
+
+		// Arm the detector
 		err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("nrfx_comp_init error: %08x", err);
