@@ -139,7 +139,7 @@ int main(void)
 		ha_send_binary_sensor_retry(&leak_detected_sensor,
 				    	    11, // Last after about 3h
 					    HA_RETRY_DELAY_SECONDS,
-					    HA_RETRY_EXP_BACKOFF);
+				HA_RETRY_EXP_BACKOFF | HA_RETRY_WAIT_PUBACK);
 	}
 	else {
 		ha_send_binary_sensor_retry(&leak_detected_sensor,
