@@ -2,7 +2,8 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
+// LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(buzzer, LOG_LEVEL_INF);
 
 #include <nrfx_pwm.h>
 
