@@ -143,6 +143,16 @@ int main(void)
 					     HA_RETRY_WAIT_PUBACK));
 	}
 	else {
+		// We set the device online a little after sensor
+		// registrations so HA gets time to process the sensor
+		// registrations first before setting the entities online
+		LOG_INF("💤 waiting for HA to process registration");
+		k_sleep(K_SECONDS(3));
+
+		ha_set_online_retry(HA_NUMBER_OF_RETRIES,
+				    HA_RETRY_DELAY_SECONDS,
+				    HA_RETRY_NO_FLAGS);
+
 		ha_send_binary_sensor_retry(&leak_detected_sensor,
 				    	    HA_NUMBER_OF_RETRIES,
 					    HA_RETRY_DELAY_SECONDS,
