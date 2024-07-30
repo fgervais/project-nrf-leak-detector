@@ -61,7 +61,6 @@ int main(void)
 {
 	uint32_t reset_cause;
 	int ret;
-	bool inhibit_discovery;
 
 	nrfx_err_t err;
 	nrfx_lpcomp_config_t lpcomp_config = {
@@ -121,9 +120,9 @@ int main(void)
 	// Something else is not ready, not sure what
 	k_sleep(K_MSEC(100));
 
-	// mqtt_watchdog_init(wdt, mqtt_wdt_chan_id);
-	inhibit_discovery = is_reset_cause_lpcomp(reset_cause);
-	ha_start(uid_get_device_id(), inhibit_discovery);
+	bool inhibit_discovery = is_reset_cause_lpcomp(reset_cause);
+	bool enable_last_will = false;
+	ha_start(uid_get_device_id(), inhibit_discovery, enable_last_will);
 
 	// On the alert path, this has not way to fail other than ENOMEM
 	ha_register_sensor_retry(&leak_detected_sensor,
