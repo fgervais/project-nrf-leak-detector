@@ -175,9 +175,9 @@ int main(void)
 
 		LOG_INF("Playing detector ready sound");
 		// smb3_sound_1up();
-		// smb3_sound_enter_world();
+		smb3_sound_enter_world();
 		// smd3_sound_game_over();
-		smb2_sound_game_over();
+		// smb2_sound_game_over();
 		// smb2_main_theme();
 	}
 
