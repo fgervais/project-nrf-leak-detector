@@ -146,7 +146,7 @@ int main(void)
 		ha_send_binary_sensor_retry(&leak_detected_sensor,
 				    	    HA_NUMBER_OF_RETRIES,
 					    HA_RETRY_DELAY_SECONDS,
-					    0);
+					    HA_RETRY_NO_FLAGS);
 
 		// Arm the detector
 		err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
