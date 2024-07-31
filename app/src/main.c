@@ -12,12 +12,26 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include <app_version.h>
-#include <reset.h>
+#include <mymodule/base/ha.h>
+#include <mymodule/base/mqtt.h>
+#include <mymodule/base/openthread.h>
+#include <mymodule/base/reset.h>
+#include <mymodule/base/uid.h>
 
 #include "buzzer.h"
 
 
-#define ALARM_TIME_SEC	60
+#define ALARM_TIME_SEC		60
+#define HA_NUMBER_OF_RETRIES	3
+#define HA_RETRY_DELAY_SECONDS	10
+
+
+static struct ha_sensor leak_detected_sensor = {
+	.type = HA_BINARY_SENSOR_TYPE,
+	.name = "Leak",
+	.device_class = "problem",
+	.retain = true,
+};
 
 
 static void comparator_handler(nrf_lpcomp_event_t event)
@@ -74,35 +88,98 @@ int main(void)
 		return 1;
 	}
 
+	// Do only the bare minimum to start the alarm if required.
+	// This is the priority.
 	if (is_reset_cause_lpcomp(reset_cause)) {
 		buzzer_alarm(ALARM_TIME_SEC);
-		goto shutdown;
+	}
+
+	ret = openthread_my_start();
+	if (ret < 0) {
+		LOG_ERR("Could not start openthread");
+		return ret;
+	}
+
+	ret = uid_init();
+	if (ret < 0) {
+		LOG_ERR("Could not init uid module");
+		return ret;
+	}
+
+	ret = uid_generate_unique_id(leak_detected_sensor.unique_id,
+				     sizeof(leak_detected_sensor.unique_id),
+				     "nrf52840", "leak",
+				     uid_get_device_id());
+	if (ret < 0) {
+		LOG_ERR("Could not generate leak sensor unique id");
+		return ret;
+	}
+
+	LOG_INF("💤 waiting for openthread to be ready");
+	openthread_wait_for_ready();
+	// Something else is not ready, not sure what
+	k_sleep(K_MSEC(100));
+
+	bool inhibit_discovery = is_reset_cause_lpcomp(reset_cause);
+	bool enable_last_will = false;
+	ha_start(uid_get_device_id(), inhibit_discovery, enable_last_will);
+
+	// On the alert path, this has not way to fail other than ENOMEM
+	ha_register_sensor_retry(&leak_detected_sensor,
+				 HA_NUMBER_OF_RETRIES,
+				 HA_RETRY_DELAY_SECONDS,
+				 0);
+
+	ha_set_binary_sensor_state(&leak_detected_sensor,
+				   is_reset_cause_lpcomp(reset_cause));
+
+	if (is_reset_cause_lpcomp(reset_cause)) {
+		// Retry for about 3h, this is the last thing we will do anyway
+		ha_send_binary_sensor_retry(&leak_detected_sensor,
+				    	    11, // Last after about 3h
+					    HA_RETRY_DELAY_SECONDS,
+					    (HA_RETRY_EXP_BACKOFF |
+					     HA_RETRY_WAIT_PUBACK));
 	}
 	else {
-		LOG_INF("Playing 1up");
+		// We set the device online a little after sensor
+		// registrations so HA gets time to process the sensor
+		// registrations first before setting the entities online
+		LOG_INF("💤 waiting for HA to process registration");
+		k_sleep(K_SECONDS(3));
+
+		ha_set_online_retry(HA_NUMBER_OF_RETRIES,
+				    HA_RETRY_DELAY_SECONDS,
+				    HA_RETRY_NO_FLAGS);
+
+		ha_send_binary_sensor_retry(&leak_detected_sensor,
+				    	    HA_NUMBER_OF_RETRIES,
+					    HA_RETRY_DELAY_SECONDS,
+					    HA_RETRY_NO_FLAGS);
+
+		// Arm the detector
+		err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
+		if (err != NRFX_SUCCESS) {
+			LOG_ERR("nrfx_comp_init error: %08x", err);
+			return 1;
+		}
+
+		IRQ_CONNECT(COMP_LPCOMP_IRQn,
+			    IRQ_PRIO_LOWEST,
+			    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
+
+		nrfx_lpcomp_enable();
+
+		LOG_INF("🆗 initialized");
+
+		LOG_INF("Playing detector ready sound");
 		// smb3_sound_1up();
-		// smb3_sound_enter_world();
+		smb3_sound_enter_world();
 		// smd3_sound_game_over();
-		smb2_sound_game_over();
+		// smb2_sound_game_over();
 		// smb2_main_theme();
-
 	}
 
-	err = nrfx_lpcomp_init(&lpcomp_config, comparator_handler);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_comp_init error: %08x", err);
-		return 1;
-	}
-
-	IRQ_CONNECT(COMP_LPCOMP_IRQn,
-		    NRFX_LPCOMP_DEFAULT_CONFIG_IRQ_PRIORITY-1,
-		    nrfx_isr, nrfx_lpcomp_irq_handler, 0);
-
-	nrfx_lpcomp_enable();
-
-	LOG_INF("🆗 initialized");
-
-shutdown:
 	while (buzzer_is_running(&buzzer_dt_spec)) {
 		LOG_INF("Waiting for buzzer to finish");
 		k_sleep(K_SECONDS(1));
